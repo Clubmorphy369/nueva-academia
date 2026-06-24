@@ -1,85 +1,23 @@
-# tu-proyecto
+# 🎓 Nueva Academia
 
-> Generado con Organizador de Proyectos Web
+Plataforma educativa moderna construida con Vanilla JS y Firebase.
+Diseño mobile-first, roles de usuario, tareas multimedia, foro, videollamadas, gamificación y PWA.
 
-## 📁 Estructura
-```
-tu-proyecto/
-├── public/
-│   ├── css/
-│       ├── global.css
-│   ├── locales/
-│   │   ├── es.json
-│       ├── en.json
-│   ├── sounds/
-│       ├── notification.mp3 (debes tener un archivo de audio)
-│   ├── index.html
-│   ├── manifest.json
-│   ├── sw.js
-    ├── firebase-messaging-sw.js
-├── src/
-│   ├── config/
-│   │   ├── firebase.js
-│   │   ├── roles.js
-│       ├── defaultSettings.js
-│   ├── state/
-│   │   ├── auth.js
-│   │   ├── data.js
-│       ├── ui.js
-│   ├── services/
-│   │   ├── firestore.js
-│   │   ├── storage.js
-│   │   ├── notifications.js
-│   │   ├── theme.js
-│       ├── i18n.js
-│   ├── utils/
-│   │   ├── validators.js
-│       ├── formatters.js
-│   ├── components/
-│   │   ├── block-editor.js
-│   │   ├── calendar.js
-│   │   ├── charts.js
-│   │   ├── chat-box.js
-│   │   ├── jitsi-meeting.js
-│   │   ├── loader.js
-│   │   ├── modal.js
-│   │   ├── notification-center.js
-│   │   ├── sidebar.js
-│   │   ├── submission-card.js
-│   │   ├── task-card.js
-│       ├── toast.js
-│   ├── views/
-│   │   ├── admin.js
-│   │   ├── auth.js
-│   │   ├── calendar.js
-│   │   ├── courses.js
-│   │   ├── entregas.js
-│   │   ├── forum.js
-│   │   ├── home.js
-│   │   ├── leaderboard.js
-│   │   ├── lessons.js
-│   │   ├── progress.js
-│       ├── tasks.js
-    ├── app.js
-├── scripts/
-    ├── build.js
-├── .github/workflows/
-    ├── deploy.yml
-├── .env
-├── .firebaserc
-├── firestore.rules
-├── storage.rules
-├── otros/
-│   ├── src:views:auth.js
-│   ├── src:views:calendar.js
-│   ├── comment-card.js
-    ├── deepseek_yaml_20260624_b72f84.yaml
-```
+## ✨ Funcionalidades
+- 🔐 Autenticación con email, Google y Microsoft
+- 👥 Roles: Alumno, Maestro, Administrador
+- 📝 Tareas con editor de bloques multimedia
+- 📊 Progreso del alumno con seguimiento por materia
+- 📅 Calendario de eventos con salas Jitsi Meet
+- 💬 Foro por materia con menciones
+- 🏆 Gamificación: insignias y ranking
+- 📱 PWA instalable y notificaciones push
+- 🎨 Personalización visual completa
 
-## 📊 Resumen
-- Carpetas: 14
-- Archivos: 55
+## 🚀 Estado
+En desarrollo activo. Primer despliegue en proceso.
 
-## 📝 Notas
-- Los archivos marcados como NUEVO requieren implementación.
-- Los marcados como MODIFICADO han sido actualizados.
+## 📂 Tecnologías
+- Frontend: JavaScript puro (SPA sin frameworks)
+- Backend: Firebase (Auth, Firestore, Storage, Hosting)
+- CI/CD: GitHub Actions
