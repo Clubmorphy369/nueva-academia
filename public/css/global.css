@@ -1,0 +1,6 @@
+/* Estilos globales adicionales (si se necesitan) */
+/* Ya se definieron variables y reset en index.html. Aquí se pueden añadir clases utilitarias. */
+
+.text-center { text-align: center; }
+.mt-1 { margin-top: 8px; }
+.mb-1 { margin-bottom: 8px; }
