@@ -3,6 +3,7 @@
 // NUNCA usar las claves directamente fuera de este archivo.
 // ============================================================
 
+const firebase = window.firebase;
 const firebaseConfig = {
   apiKey: "AIza...",
   authDomain: "tu-proyecto.firebaseapp.com",
