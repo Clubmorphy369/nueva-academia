@@ -27,3 +27,23 @@ export default ${JSON.stringify(config, null, 2)};
 const outputPath = path.join(__dirname, '..', 'src', 'config', 'firebase-config.js');
 fs.writeFileSync(outputPath, fileContent);
 console.log('✅ firebase-config.js generado correctamente.');
+
+// Copiar carpeta src a public para el despliegue
+const srcDir = path.join(__dirname, '..', 'src');
+const destDir = path.join(__dirname, '..', 'public', 'src');
+
+function copyDir(src, dest) {
+  if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+copyDir(srcDir, destDir);
+console.log('✅ Carpeta src copiada a public/src para el despliegue.');
