@@ -177,12 +177,12 @@ export function initSidebar() {
     await toggleDarkMode();
   });
 
-  setTimeout(() => {
+ setTimeout(async () => {
     const { initNotificationCenter, mountBell } = await import('./notification-center.js');
     initNotificationCenter();
     const bellContainer = document.getElementById('sidebar-bell-container');
     if (bellContainer) mountBell(bellContainer);
-  }, 200);
+}, 200);
 }
 
 function updateUserInfo(authState) {
