@@ -6,7 +6,7 @@ import { getCurrentAuthState } from '../state/auth.js';
 import { getDataState, loadAllUserData } from '../state/data.js';
 import { showToast, showModal, setLoading } from '../state/ui.js';
 import { ROLES } from '../config/roles.js';
-import { addDocument, deleteDocument } from '../services/firestore.js';
+import * as firestore from '../services/firestore.js';
 
 let currentMateriaFilter = null;
 
@@ -70,7 +70,12 @@ function createEventCard(event) {
   `;
   card.querySelector('.btn-delete-event')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    showModal('Eliminar evento', '<p>¿Seguro?</p>', async () => { await deleteDocument('events', event.id); showToast('Evento eliminado', 'success'); loadAllUserData(authState.user.uid); renderEventsList(); });
+    showModal('Eliminar evento', '<p>¿Seguro?</p>', async () => {
+      await firestore.deleteDocument('events', event.id);
+      showToast('Evento eliminado', 'success');
+      loadAllUserData(authState.user.uid);
+      renderEventsList();
+    });
   });
   return card;
 }
@@ -90,10 +95,23 @@ function openNewEventForm() {
     if (!title || !startDate || !endDate) return showToast('Completa los campos', 'error');
     if (new Date(endDate) <= new Date(startDate)) return showToast('Fin debe ser posterior', 'error');
     const authState = getCurrentAuthState();
-    await addDocument('events', { title, class: document.getElementById('eventClass').value, startDate, endDate, createdBy: authState.user.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await firestore.addDocument('events', {
+      title,
+      class: document.getElementById('eventClass').value,
+      startDate,
+      endDate,
+      createdBy: authState.user.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
     if (document.getElementById('createRoom').checked) {
       const roomName = `event-${Date.now()}-${title.replace(/\s/g,'_')}`;
-      await addDocument('rooms', { materia: document.getElementById('eventClass').value, roomName, url: `https://meet.jit.si/${roomName}`, createdBy: authState.user.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      await firestore.addDocument('rooms', {
+        materia: document.getElementById('eventClass').value,
+        roomName,
+        url: `https://meet.jit.si/${roomName}`,
+        createdBy: authState.user.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
     }
     showToast('Evento creado', 'success');
     loadAllUserData(authState.user.uid);
