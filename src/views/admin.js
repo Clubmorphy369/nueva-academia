@@ -6,7 +6,7 @@ import { getCurrentAuthState } from '../state/auth.js';
 import { getDataState, loadAllUserData } from '../state/data.js';
 import { showToast, showModal, setLoading } from '../state/ui.js';
 import { ROLES } from '../config/roles.js';
-import { getCollection, addDocument, updateDocument, deleteDocument, setDocument, getDocument } from '../services/firestore.js';
+import * as firestore from '../services/firestore.js';
 import { uploadFile } from '../services/storage.js';
 import { getCurrentTheme } from '../services/theme.js';
 import { formatDate } from '../utils/formatters.js';
@@ -83,7 +83,7 @@ function renderCurrentTab() {
 // ─── USUARIOS ───
 async function renderUsuariosTab(container) {
   container.innerHTML = '<p>Cargando usuarios...</p>';
-  const usuarios = await getCollection('usuarios');
+  const usuarios = await firestore.getCollection('usuarios');
   container.innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
       <h2>👥 Gestión de Usuarios (${usuarios.length})</h2>
@@ -108,13 +108,13 @@ async function renderUsuariosTab(container) {
   `;
 
   container.querySelectorAll('.role-select').forEach(sel => sel.addEventListener('change', async (e) => {
-    await updateDocument('usuarios', e.target.dataset.uid, { role: e.target.value });
+    await firestore.updateDocument('usuarios', e.target.dataset.uid, { role: e.target.value });
     showToast('Rol actualizado', 'success');
   }));
   container.querySelectorAll('.btn-delete-user').forEach(btn => btn.addEventListener('click', (e) => {
     const uid = e.target.dataset.uid;
     showModal('Eliminar usuario', '<p>¿Estás seguro?</p>', async () => {
-      await deleteDocument('usuarios', uid);
+      await firestore.deleteDocument('usuarios', uid);
       showToast('Usuario eliminado', 'success');
       renderUsuariosTab(container);
     });
@@ -138,7 +138,7 @@ function showAddUserModal(container) {
     if (!name || !email || !password) return showToast('Completa todos los campos', 'error');
     const { auth } = await import('../config/firebase.js');
     const userCred = await auth.createUserWithEmailAndPassword(email, password);
-    await setDocument('usuarios', userCred.user.uid, { name, email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp(), progress: { completadas: [], favoritas: [] } });
+    await firestore.setDocument('usuarios', userCred.user.uid, { name, email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp(), progress: { completadas: [], favoritas: [] } });
     showToast('Usuario creado', 'success');
     renderUsuariosTab(document.getElementById('adminTabContent'));
   });
@@ -157,7 +157,7 @@ function renderMateriasTab(container) {
   container.querySelectorAll('.btn-edit-materia').forEach(b => b.addEventListener('click', () => showMateriaForm({ id: b.dataset.id, nombre: b.dataset.nombre }, container)));
   container.querySelectorAll('.btn-delete-materia').forEach(b => b.addEventListener('click', async () => {
     showModal('Eliminar', '<p>¿Eliminar materia?</p>', async () => {
-      await deleteDocument('materias', b.dataset.id);
+      await firestore.deleteDocument('materias', b.dataset.id);
       showToast('Materia eliminada', 'success');
       loadAllUserData(getCurrentAuthState().user.uid);
       renderMateriasTab(container);
@@ -171,8 +171,8 @@ function showMateriaForm(materia, container) {
   showModal(materia ? 'Editar Materia' : 'Nueva Materia', div, async () => {
     const nombre = document.getElementById('materiaNombre').value.trim();
     if (!nombre) return showToast('Nombre requerido', 'error');
-    if (materia) await updateDocument('materias', materia.id, { nombre });
-    else await addDocument('materias', { nombre });
+    if (materia) await firestore.updateDocument('materias', materia.id, { nombre });
+    else await firestore.addDocument('materias', { nombre });
     showToast(materia ? 'Actualizada' : 'Creada', 'success');
     loadAllUserData(getCurrentAuthState().user.uid);
     renderMateriasTab(container);
@@ -184,7 +184,7 @@ function renderLimitesTab(container) {
   const s = getDataState().settings || {};
   container.innerHTML = `<h2>📏 Límites</h2><label>Máx clases/maestro:</label><input id="maxClases" type="number" value="${s.maxClases||5}" style="width:100px;margin:10px;"><label>Máx alumnos/maestro:</label><input id="maxAlumnos" type="number" value="${s.maxAlumnos||30}" style="width:100px;margin:10px;"><button id="saveLimites" style="padding:10px 20px; background:var(--primary-color); color:white; border:none; border-radius:8px;">Guardar</button>`;
   document.getElementById('saveLimites').addEventListener('click', async () => {
-    await setDocument('settings', 'config', { maxClases: +document.getElementById('maxClases').value, maxAlumnos: +document.getElementById('maxAlumnos').value }, true);
+    await firestore.setDocument('settings', 'config', { maxClases: +document.getElementById('maxClases').value, maxAlumnos: +document.getElementById('maxAlumnos').value }, true);
     showToast('Guardado', 'success');
   });
 }
@@ -193,7 +193,7 @@ function renderAnunciosTab(container) {
   const anuncio = getDataState().anuncioGlobal || '';
   container.innerHTML = `<h2>📢 Anuncio Global</h2><textarea id="anuncioText" rows="4" style="width:100%;padding:10px;">${anuncio}</textarea><button id="saveAnuncio" style="margin-top:10px; padding:10px 20px; background:var(--primary-color); color:white; border:none; border-radius:8px;">Guardar</button>`;
   document.getElementById('saveAnuncio').addEventListener('click', async () => {
-    await setDocument('settings', 'anuncio', { texto: document.getElementById('anuncioText').value }, true);
+    await firestore.setDocument('settings', 'anuncio', { texto: document.getElementById('anuncioText').value }, true);
     showToast('Anuncio guardado', 'success');
   });
 }
@@ -230,30 +230,45 @@ async function renderAparienciaTab(container) {
     <button id="saveAppearance" style="margin-top:20px; padding:12px 24px; background:var(--primary-color); color:white; border:none; border-radius:8px;">Aplicar</button>
   `;
 
-  document.getElementById('toggleDarkMode').addEventListener('click', async () => { const { toggleDarkMode } = await import('../services/theme.js'); await toggleDarkMode(); renderAparienciaTab(container); });
+  document.getElementById('toggleDarkMode').addEventListener('click', async () => {
+    const { toggleDarkMode } = await import('../services/theme.js');
+    await toggleDarkMode();
+    renderAparienciaTab(container);
+  });
   document.getElementById('uploadLogoBtn').addEventListener('click', async () => {
     const file = document.getElementById('logoFile').files[0];
     if (!file) return showToast('Selecciona imagen', 'warning');
     const url = await uploadFile(`logos/logo_${Date.now()}.${file.name.split('.').pop()}`, file);
-    const { updateLogo } = await import('../services/theme.js'); await updateLogo(url);
-    document.getElementById('logoPreview').src = url; document.getElementById('logoPreview').style.display = 'block';
+    const { updateLogo } = await import('../services/theme.js');
+    await updateLogo(url);
+    document.getElementById('logoPreview').src = url;
+    document.getElementById('logoPreview').style.display = 'block';
   });
-  document.getElementById('removeLogoBtn')?.addEventListener('click', async () => { const { updateLogo } = await import('../services/theme.js'); await updateLogo(''); document.getElementById('logoPreview').style.display = 'none'; });
+  document.getElementById('removeLogoBtn')?.addEventListener('click', async () => {
+    const { updateLogo } = await import('../services/theme.js');
+    await updateLogo('');
+    document.getElementById('logoPreview').style.display = 'none';
+  });
   document.getElementById('saveAppearance').addEventListener('click', async () => {
     const { saveTheme } = await import('../services/theme.js');
     await saveTheme({
-      primaryColor: document.getElementById('primaryColor').value, secondaryColor: document.getElementById('secondaryColor').value,
-      backgroundColor: document.getElementById('backgroundColor').value, surfaceColor: document.getElementById('surfaceColor').value,
-      textColor: document.getElementById('textColor').value, textSecondary: document.getElementById('textSecondary').value,
-      borderColor: document.getElementById('borderColor').value, fontFamily: document.getElementById('fontFamilySelect').value,
-      baseFontSize: document.getElementById('baseFontSize').value + 'px', borderRadius: document.getElementById('borderRadiusSelect').value
+      primaryColor: document.getElementById('primaryColor').value,
+      secondaryColor: document.getElementById('secondaryColor').value,
+      backgroundColor: document.getElementById('backgroundColor').value,
+      surfaceColor: document.getElementById('surfaceColor').value,
+      textColor: document.getElementById('textColor').value,
+      textSecondary: document.getElementById('textSecondary').value,
+      borderColor: document.getElementById('borderColor').value,
+      fontFamily: document.getElementById('fontFamilySelect').value,
+      baseFontSize: document.getElementById('baseFontSize').value + 'px',
+      borderRadius: document.getElementById('borderRadiusSelect').value
     });
   });
 }
 
 async function renderNotificacionesTab(container) {
   const authState = getCurrentAuthState();
-  const userDoc = await getDocument('usuarios', authState.user.uid);
+  const userDoc = await firestore.getDocument('usuarios', authState.user.uid);
   const soundSettings = userDoc?.soundSettings || { enabled: true, file: '/sounds/notification.mp3' };
   container.innerHTML = `
     <h2>🔔 Notificaciones</h2>
@@ -264,7 +279,19 @@ async function renderNotificacionesTab(container) {
     <hr><p>Push: ${Notification.permission==='granted'?'✅ Activadas':'❌ Desactivadas'}</p>
     <button id="requestPushPermission" style="padding:10px 20px; background:#ff9800; color:white; border:none; border-radius:8px;">${Notification.permission==='granted'?'Reenviar token':'Activar push'}</button>
   `;
-  document.getElementById('testSoundBtn').addEventListener('click', () => { const { setSoundSettings, playNotificationSound } = await import('../services/notifications.js'); setSoundSettings(true, document.getElementById('soundFile').value); playNotificationSound(); });
-  document.getElementById('saveSoundSettings').addEventListener('click', async () => { const { saveSoundSettings } = await import('../services/notifications.js'); await saveSoundSettings(document.getElementById('soundEnabled').checked, document.getElementById('soundFile').value); });
-  document.getElementById('requestPushPermission').addEventListener('click', async () => { const { requestFCMPermission } = await import('../services/notifications.js'); const token = await requestFCMPermission(); if (token) showToast('Push activado', 'success'); });
+  document.getElementById('testSoundBtn').addEventListener('click', () => {
+    import('../services/notifications.js').then(m => {
+      m.setSoundSettings(true, document.getElementById('soundFile').value);
+      m.playNotificationSound();
+    });
+  });
+  document.getElementById('saveSoundSettings').addEventListener('click', async () => {
+    const { saveSoundSettings } = await import('../services/notifications.js');
+    await saveSoundSettings(document.getElementById('soundEnabled').checked, document.getElementById('soundFile').value);
+  });
+  document.getElementById('requestPushPermission').addEventListener('click', async () => {
+    const { requestFCMPermission } = await import('../services/notifications.js');
+    const token = await requestFCMPermission();
+    if (token) showToast('Push activado', 'success');
+  });
 }
