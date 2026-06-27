@@ -6,7 +6,7 @@ import { getCurrentAuthState } from '../state/auth.js';
 import { getDataState, loadAllUserData } from '../state/data.js';
 import { showToast, showModal, setLoading } from '../state/ui.js';
 import { ROLES } from '../config/roles.js';
-import * as firestore from '../services/firestore.js';
+import { getCollection, getDocument, updateDocument, deleteDocument, setDocument, addDocument } from '../services/firestore.js';
 import { uploadFile } from '../services/storage.js';
 import { getCurrentTheme } from '../services/theme.js';
 import { formatDate } from '../utils/formatters.js';
@@ -84,7 +84,7 @@ function renderCurrentTab() {
 async function renderUsuariosTab(container) {
   container.innerHTML = '<p>Cargando usuarios...</p>';
   try {
-    const usuarios = await firestore.getCollection('usuarios');
+    const usuarios = await getCollection('usuarios');
     container.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <h2>👥 Gestión de Usuarios (${usuarios.length})</h2>
@@ -108,13 +108,13 @@ async function renderUsuariosTab(container) {
       </table>
     `;
     container.querySelectorAll('.role-select').forEach(sel => sel.addEventListener('change', async (e) => {
-      await firestore.updateDocument('usuarios', e.target.dataset.uid, { role: e.target.value });
+      await updateDocument('usuarios', e.target.dataset.uid, { role: e.target.value });
       showToast('Rol actualizado', 'success');
     }));
     container.querySelectorAll('.btn-delete-user').forEach(btn => btn.addEventListener('click', (e) => {
       const uid = e.target.dataset.uid;
       showModal('Eliminar usuario', '<p>¿Estás seguro?</p>', async () => {
-        await firestore.deleteDocument('usuarios', uid);
+        await deleteDocument('usuarios', uid);
         showToast('Usuario eliminado', 'success');
         renderUsuariosTab(container);
       });
@@ -143,7 +143,7 @@ function showAddUserModal(container) {
     if (!name || !email || !password) return showToast('Completa todos los campos', 'error');
     const { auth } = await import('../config/firebase.js');
     const userCred = await auth.createUserWithEmailAndPassword(email, password);
-    await firestore.setDocument('usuarios', userCred.user.uid, { name, email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp(), progress: { completadas: [], favoritas: [] } });
+    await setDocument('usuarios', userCred.user.uid, { name, email, role, createdAt: firebase.firestore.FieldValue.serverTimestamp(), progress: { completadas: [], favoritas: [] } });
     showToast('Usuario creado', 'success');
     renderUsuariosTab(document.getElementById('adminTabContent'));
   });
@@ -162,7 +162,7 @@ function renderMateriasTab(container) {
   container.querySelectorAll('.btn-edit-materia').forEach(b => b.addEventListener('click', () => showMateriaForm({ id: b.dataset.id, nombre: b.dataset.nombre }, container)));
   container.querySelectorAll('.btn-delete-materia').forEach(b => b.addEventListener('click', async () => {
     showModal('Eliminar', '<p>¿Eliminar materia?</p>', async () => {
-      await firestore.deleteDocument('materias', b.dataset.id);
+      await deleteDocument('materias', b.dataset.id);
       showToast('Materia eliminada', 'success');
       loadAllUserData(getCurrentAuthState().user.uid);
       renderMateriasTab(container);
@@ -176,8 +176,8 @@ function showMateriaForm(materia, container) {
   showModal(materia ? 'Editar Materia' : 'Nueva Materia', div, async () => {
     const nombre = document.getElementById('materiaNombre').value.trim();
     if (!nombre) return showToast('Nombre requerido', 'error');
-    if (materia) await firestore.updateDocument('materias', materia.id, { nombre });
-    else await firestore.addDocument('materias', { nombre });
+    if (materia) await updateDocument('materias', materia.id, { nombre });
+    else await addDocument('materias', { nombre });
     showToast(materia ? 'Actualizada' : 'Creada', 'success');
     loadAllUserData(getCurrentAuthState().user.uid);
     renderMateriasTab(container);
@@ -189,7 +189,7 @@ function renderLimitesTab(container) {
   const s = getDataState().settings || {};
   container.innerHTML = `<h2>📏 Límites</h2><label>Máx clases/maestro:</label><input id="maxClases" type="number" value="${s.maxClases||5}" style="width:100px;margin:10px;"><label>Máx alumnos/maestro:</label><input id="maxAlumnos" type="number" value="${s.maxAlumnos||30}" style="width:100px;margin:10px;"><button id="saveLimites" style="padding:10px 20px; background:var(--primary-color); color:white; border:none; border-radius:8px;">Guardar</button>`;
   document.getElementById('saveLimites').addEventListener('click', async () => {
-    await firestore.setDocument('settings', 'config', { maxClases: +document.getElementById('maxClases').value, maxAlumnos: +document.getElementById('maxAlumnos').value }, true);
+    await setDocument('settings', 'config', { maxClases: +document.getElementById('maxClases').value, maxAlumnos: +document.getElementById('maxAlumnos').value }, true);
     showToast('Guardado', 'success');
   });
 }
@@ -198,7 +198,7 @@ function renderAnunciosTab(container) {
   const anuncio = getDataState().anuncioGlobal || '';
   container.innerHTML = `<h2>📢 Anuncio Global</h2><textarea id="anuncioText" rows="4" style="width:100%;padding:10px;">${anuncio}</textarea><button id="saveAnuncio" style="margin-top:10px; padding:10px 20px; background:var(--primary-color); color:white; border:none; border-radius:8px;">Guardar</button>`;
   document.getElementById('saveAnuncio').addEventListener('click', async () => {
-    await firestore.setDocument('settings', 'anuncio', { texto: document.getElementById('anuncioText').value }, true);
+    await setDocument('settings', 'anuncio', { texto: document.getElementById('anuncioText').value }, true);
     showToast('Anuncio guardado', 'success');
   });
 }
@@ -273,7 +273,7 @@ async function renderAparienciaTab(container) {
 
 async function renderNotificacionesTab(container) {
   const authState = getCurrentAuthState();
-  const userDoc = await firestore.getDocument('usuarios', authState.user.uid);
+  const userDoc = await getDocument('usuarios', authState.user.uid);
   const soundSettings = userDoc?.soundSettings || { enabled: true, file: '/sounds/notification.mp3' };
   container.innerHTML = `
     <h2>🔔 Notificaciones</h2>
