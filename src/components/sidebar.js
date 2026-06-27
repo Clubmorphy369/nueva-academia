@@ -141,11 +141,16 @@ export function initSidebar() {
 
   onUIChange(state => {
     if (state.isDesktop) {
-      sidebarEl.style.transform = 'translateX(0)';
-      overlay.style.display = 'none';
+      sidebarEl.classList.add('open');
+      overlay.classList.remove('visible');
     } else {
-      sidebarEl.style.transform = state.sidebarOpen ? 'translateX(0)' : 'translateX(-100%)';
-      overlay.style.display = state.sidebarOpen ? 'block' : 'none';
+      if (state.sidebarOpen) {
+        sidebarEl.classList.add('open');
+        overlay.classList.add('visible');
+      } else {
+        sidebarEl.classList.remove('open');
+        overlay.classList.remove('visible');
+      }
     }
     updateActiveView(state.currentView);
   });
