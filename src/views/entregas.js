@@ -6,7 +6,7 @@ import { getCurrentAuthState } from '../state/auth.js';
 import { getDataState, loadAllUserData } from '../state/data.js';
 import { showToast, showModal, setLoading } from '../state/ui.js';
 import { ROLES } from '../config/roles.js';
-import { addDocument, updateDocument } from '../services/firestore.js';
+import * as firestore from '../services/firestore.js';
 import { uploadFile } from '../services/storage.js';
 import { createSubmissionCard } from '../components/submission-card.js';
 
@@ -95,7 +95,7 @@ function openNewVersionForm(task) {
     const authState = getCurrentAuthState();
     let fileUrl = null, fileName = null;
     if (file) { const path = `submissions/${authState.user.uid}/${task.id}/${Date.now()}_${file.name}`; fileUrl = await uploadFile(path, file); fileName = file.name; }
-    await addDocument('submissions', { taskId: task.id, studentId: authState.user.uid, studentName: authState.user.displayName || authState.user.email, text, fileName, fileUrl, submittedAt: firebase.firestore.FieldValue.serverTimestamp(), version: (getDataState().submissions.filter(s => s.taskId===task.id && s.studentId===authState.user.uid).length)+1 });
+    await firestore.addDocument('submissions', { taskId: task.id, studentId: authState.user.uid, studentName: authState.user.displayName || authState.user.email, text, fileName, fileUrl, submittedAt: firebase.firestore.FieldValue.serverTimestamp(), version: (getDataState().submissions.filter(s => s.taskId===task.id && s.studentId===authState.user.uid).length)+1 });
     showToast('Versión entregada', 'success');
     setLoading(false);
     loadAllUserData(authState.user.uid);
@@ -109,7 +109,7 @@ function openGradeForm(submission) {
     const grade = parseFloat(document.getElementById('gradeInput').value);
     const feedback = document.getElementById('feedbackInput').value;
     if (isNaN(grade) || grade<0 || grade>10) return showToast('Nota inválida', 'error');
-    await updateDocument('submissions', submission.id, { grade, feedback });
+    await firestore.updateDocument('submissions', submission.id, { grade, feedback });
     showToast('Calificación guardada', 'success');
     loadAllUserData(getCurrentAuthState().user.uid);
     renderEntregasList();
