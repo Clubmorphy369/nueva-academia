@@ -83,43 +83,48 @@ function renderCurrentTab() {
 // ─── USUARIOS ───
 async function renderUsuariosTab(container) {
   container.innerHTML = '<p>Cargando usuarios...</p>';
-  const usuarios = await firestore.getCollection('usuarios');
-  container.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-      <h2>👥 Gestión de Usuarios (${usuarios.length})</h2>
-      <button id="btnAddUser" style="padding:10px 20px; background:#4caf50; color:white; border:none; border-radius:8px; cursor:pointer;">➕ Agregar Usuario</button>
-    </div>
-    <table style="width:100%; border-collapse:collapse;">
-      <thead><tr style="background:#f5f5f5;"><th>Nombre</th><th>Email</th><th>Rol</th><th>Acciones</th></tr></thead>
-      <tbody id="usersTableBody">
-        ${usuarios.map(u => `
-          <tr style="border-bottom:1px solid #eee;">
-            <td>${u.name || 'Sin nombre'}</td><td>${u.email}</td>
-            <td><select class="role-select" data-uid="${u.id}" style="padding:6px;border-radius:4px;">
-              <option value="student" ${u.role==='student'?'selected':''}>Alumno</option>
-              <option value="teacher" ${u.role==='teacher'?'selected':''}>Maestro</option>
-              <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
-            </select></td>
-            <td><button class="btn-delete-user" data-uid="${u.id}" style="background:#f44336;color:white;border:none;padding:6px 12px;border-radius:6px;">🗑️</button></td>
-          </tr>`).join('')
-        }
-      </tbody>
-    </table>
-  `;
-
-  container.querySelectorAll('.role-select').forEach(sel => sel.addEventListener('change', async (e) => {
-    await firestore.updateDocument('usuarios', e.target.dataset.uid, { role: e.target.value });
-    showToast('Rol actualizado', 'success');
-  }));
-  container.querySelectorAll('.btn-delete-user').forEach(btn => btn.addEventListener('click', (e) => {
-    const uid = e.target.dataset.uid;
-    showModal('Eliminar usuario', '<p>¿Estás seguro?</p>', async () => {
-      await firestore.deleteDocument('usuarios', uid);
-      showToast('Usuario eliminado', 'success');
-      renderUsuariosTab(container);
-    });
-  }));
-  document.getElementById('btnAddUser').addEventListener('click', () => showAddUserModal(container));
+  try {
+    const usuarios = await firestore.getCollection('usuarios');
+    container.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h2>👥 Gestión de Usuarios (${usuarios.length})</h2>
+        <button id="btnAddUser" style="padding:10px 20px; background:#4caf50; color:white; border:none; border-radius:8px; cursor:pointer;">➕ Agregar Usuario</button>
+      </div>
+      <table style="width:100%; border-collapse:collapse;">
+        <thead><tr style="background:#f5f5f5;"><th>Nombre</th><th>Email</th><th>Rol</th><th>Acciones</th></tr></thead>
+        <tbody id="usersTableBody">
+          ${usuarios.map(u => `
+            <tr style="border-bottom:1px solid #eee;">
+              <td>${u.name || 'Sin nombre'}</td><td>${u.email}</td>
+              <td><select class="role-select" data-uid="${u.id}" style="padding:6px;border-radius:4px;">
+                <option value="student" ${u.role==='student'?'selected':''}>Alumno</option>
+                <option value="teacher" ${u.role==='teacher'?'selected':''}>Maestro</option>
+                <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+              </select></td>
+              <td><button class="btn-delete-user" data-uid="${u.id}" style="background:#f44336;color:white;border:none;padding:6px 12px;border-radius:6px;">🗑️</button></td>
+            </tr>`).join('')
+          }
+        </tbody>
+      </table>
+    `;
+    container.querySelectorAll('.role-select').forEach(sel => sel.addEventListener('change', async (e) => {
+      await firestore.updateDocument('usuarios', e.target.dataset.uid, { role: e.target.value });
+      showToast('Rol actualizado', 'success');
+    }));
+    container.querySelectorAll('.btn-delete-user').forEach(btn => btn.addEventListener('click', (e) => {
+      const uid = e.target.dataset.uid;
+      showModal('Eliminar usuario', '<p>¿Estás seguro?</p>', async () => {
+        await firestore.deleteDocument('usuarios', uid);
+        showToast('Usuario eliminado', 'success');
+        renderUsuariosTab(container);
+      });
+    }));
+    document.getElementById('btnAddUser').addEventListener('click', () => showAddUserModal(container));
+  } catch (error) {
+    container.innerHTML = `<div style="color:red; padding:20px; background:#ffebee; border-radius:8px;">
+      <strong>Error al cargar usuarios:</strong> ${error.message}
+    </div>`;
+  }
 }
 
 function showAddUserModal(container) {
