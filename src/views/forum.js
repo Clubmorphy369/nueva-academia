@@ -5,7 +5,7 @@
 import { getCurrentAuthState } from '../state/auth.js';
 import { getDataState, loadAllUserData } from '../state/data.js';
 import { showToast, showModal, setLoading } from '../state/ui.js';
-import { addDocument, deleteDocument } from '../services/firestore.js';
+import * as firestore from '../services/firestore.js';
 import { createCommentCard } from '../components/comment-card.js';
 
 let currentMateriaFilter = null;
@@ -45,7 +45,7 @@ function renderComments() {
 
 async function onDeleteComment(commentId) {
   showModal('Eliminar', '<p>¿Eliminar comentario?</p>', async () => {
-    await deleteDocument('comentarios', commentId);
+    await firestore.deleteDocument('comentarios', commentId);
     showToast('Comentario eliminado', 'success');
     loadAllUserData(getCurrentAuthState().user.uid);
     renderComments();
@@ -61,10 +61,13 @@ function openNewPostForm() {
     if (!text) return showToast('El comentario no puede estar vacío', 'error');
     const authState = getCurrentAuthState();
     const select = document.getElementById('newPostMateria');
-    await addDocument('comentarios', {
-      materiaId: select.value, materiaName: select.options[select.selectedIndex].dataset.nombre,
-      userId: authState.user.uid, userName: authState.user.displayName || authState.user.email,
-      text, mentions: [...text.matchAll(/@(\w+)/g)].map(m => m[1]),
+    await firestore.addDocument('comentarios', {
+      materiaId: select.value,
+      materiaName: select.options[select.selectedIndex].dataset.nombre,
+      userId: authState.user.uid,
+      userName: authState.user.displayName || authState.user.email,
+      text,
+      mentions: [...text.matchAll(/@(\w+)/g)].map(m => m[1]),
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showToast('Comentario publicado', 'success');
