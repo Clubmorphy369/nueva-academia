@@ -77,7 +77,7 @@ function renderTaskList() {
 function onTaskClick(task) {
   const role = getCurrentAuthState().role;
   if (role === ROLES.STUDENT) openSubmissionForm(task);
-  else openTaskDetail(task);
+  else openTaskForm(task);   // ✅ Esto abre el editor
 }
 
 function openTaskForm(task = null) {
