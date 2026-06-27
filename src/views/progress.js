@@ -6,7 +6,7 @@ import { onAuthStateChange, getCurrentAuthState } from '../state/auth.js';
 import { onDataChange, getDataState, loadAllUserData, loadStudents } from '../state/data.js';
 import { showToast } from '../state/ui.js';
 import { ROLES } from '../config/roles.js';
-import { updateDocument } from '../services/firestore.js';
+import * as firestore from '../services/firestore.js';
 
 export function renderProgressView() {
   const main = document.getElementById('main-content');
@@ -100,7 +100,7 @@ function renderMateriasList(userProgress, materias) {
       let completadas = [...(getDataState().userProgress?.completadas || [])];
       if (checked) { if (!completadas.includes(materia)) completadas.push(materia); }
       else { completadas = completadas.filter(m => m !== materia); }
-      await updateDocument('usuarios', userId, { 'progress.completadas': completadas });
+      await firestore.updateDocument('usuarios', userId, { 'progress.completadas': completadas });
       showToast(checked ? `¡${materia} completada!` : 'Progreso actualizado', 'success');
       loadAllUserData(userId);
     });
@@ -114,7 +114,7 @@ function renderMateriasList(userProgress, materias) {
       let favoritas = [...(getDataState().userProgress?.favoritas || [])];
       if (favoritas.includes(materia)) { favoritas = favoritas.filter(m => m !== materia); }
       else { favoritas.push(materia); }
-      await updateDocument('usuarios', userId, { 'progress.favoritas': favoritas });
+      await firestore.updateDocument('usuarios', userId, { 'progress.favoritas': favoritas });
       showToast(favoritas.includes(materia) ? 'Añadido a favoritos' : 'Eliminado de favoritos', 'success');
       loadAllUserData(userId);
     });
