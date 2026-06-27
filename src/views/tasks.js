@@ -8,7 +8,7 @@ import { showToast, showModal, navigateTo, setLoading } from '../state/ui.js';
 import { ROLES } from '../config/roles.js';
 import { createTaskCard } from '../components/task-card.js';
 import { createBlockEditor } from '../components/block-editor.js';
-import { addDocument, updateDocument } from '../services/firestore.js';
+import * as firestore from '../services/firestore.js';
 import { formatDate } from '../utils/formatters.js';
 
 let currentFilter = 'all';
@@ -108,8 +108,8 @@ function openTaskForm(task = null) {
       blocks: window._currentBlockEditor?.getBlocks() || [],
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
-    if (isEdit) await updateDocument('tasks', task.id, taskData);
-    else await addDocument('tasks', { ...taskData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    if (isEdit) await firestore.updateDocument('tasks', task.id, taskData);
+    else await firestore.addDocument('tasks', { ...taskData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
     showToast(isEdit ? 'Actualizada' : 'Creada', 'success');
     loadAllUserData(getCurrentAuthState().user.uid);
     renderTaskList();
@@ -139,7 +139,7 @@ function openGradeForm(submission) {
     const grade = parseFloat(document.getElementById('gradeInput').value);
     const feedback = document.getElementById('feedbackInput').value;
     if (isNaN(grade) || grade<0 || grade>10) return showToast('Nota inválida', 'error');
-    await updateDocument('submissions', submission.id, { grade, feedback });
+    await firestore.updateDocument('submissions', submission.id, { grade, feedback });
     showToast('Calificación guardada', 'success');
     loadAllUserData(getCurrentAuthState().user.uid);
   });
@@ -154,7 +154,7 @@ function openSubmissionForm(task) {
     if (!text && !file) return showToast('Incluye texto o archivo', 'error');
     if (file && file.size > 5*1024*1024) return showToast('Archivo > 5MB', 'error');
     const authState = getCurrentAuthState();
-    await addDocument('submissions', {
+    await firestore.addDocument('submissions', {
       taskId: task.id, studentId: authState.user.uid, studentName: authState.user.displayName || authState.user.email,
       text, fileName: file?.name || null, fileUrl: file?.name ? URL.createObjectURL(file) : null,
       submittedAt: firebase.firestore.FieldValue.serverTimestamp()
